@@ -1,52 +1,36 @@
 import net.dv8tion.jda.api.*;
 import net.dv8tion.jda.api.entities.*;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
-import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
-import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
-import net.dv8tion.jda.api.events.message.react.MessageReactionAddEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.interactions.commands.DefaultMemberPermissions;
 import net.dv8tion.jda.api.interactions.commands.OptionMapping;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.Commands;
-import net.dv8tion.jda.api.interactions.commands.build.OptionData;
-import net.dv8tion.jda.api.interactions.components.buttons.Button;
-import net.dv8tion.jda.api.requests.GatewayIntent;
-import net.dv8tion.jda.api.requests.restaction.AuditableRestAction;
-import net.dv8tion.jda.api.utils.Compression;
 import net.dv8tion.jda.api.utils.cache.CacheFlag;
 
 import org.json.simple.parser.JSONParser;
 
-import javax.security.auth.login.LoginException;
-
-import java.awt.Color;
-
-import java.io.*;
-
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
-import java.util.concurrent.TimeUnit;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public class mainBot extends ListenerAdapter
 {
     JSONParser jsonParser = new JSONParser();
-    dataStore accounts = new dataStore();
+    userDataStore accounts = new userDataStore();
     public String authorID = " ";
     public String credits = "";
     public String receiverString = "";
     public static JDA jda;
 
+    //Move all of these vars to server data file (so they are persistent across restarts)
     public int TICKET_PRICE = 1000;
     public int MAX_TICKETS = 20;
     public int currentJackpot = 100000;
     public int ticketsSold = 0;
 
     Date drawDate = new Date();
-    dataStore ds = new dataStore();
+    userDataStore ds = new userDataStore();
     public static void main(String []args)
     {
         jda = JDABuilder.createDefault(System.getenv("token"), Collections.emptyList())
