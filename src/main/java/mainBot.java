@@ -8,19 +8,12 @@ import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.Commands;
 import net.dv8tion.jda.api.utils.cache.CacheFlag;
 
-import org.json.simple.parser.JSONParser;
-
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
 public class mainBot extends ListenerAdapter
 {
-    JSONParser jsonParser = new JSONParser();
-    userDataStore accounts = new userDataStore();
-    public String authorID = " ";
-    public String credits = "";
-    public String receiverString = "";
     public static JDA jda;
 
     //Move all of these vars to server data file (so they are persistent across restarts)
@@ -71,44 +64,37 @@ public class mainBot extends ListenerAdapter
     @Override
     public void onSlashCommandInteraction(SlashCommandInteractionEvent event) {
         switch (event.getName()) {
-            case "buy":
+            case "buy" -> {
                 int credits = Integer.parseInt(ds.getCredits(event.getUser().getId()));
-                if(credits >  TICKET_PRICE * event.getOption("amount").getAsInt())
-                {
+                if (credits > TICKET_PRICE * event.getOption("amount").getAsInt()) {
                     ds.editAccount(event.getUser().getId(), String.valueOf(credits - (TICKET_PRICE * event.getOption("amount").getAsInt())));
                     ArrayList<Integer> tickets = ds.getTickets(event.getUser().getId());
-                    for(int i = 0; i < event.getOption("amount").getAsInt(); i++)
-                    {
+                    for (int i = 0; i < event.getOption("amount").getAsInt(); i++) {
                         Random r = new Random();
-                        tickets.add(r.nextInt(999)+1);
+                        tickets.add(r.nextInt(999) + 1);
                     }
                     ds.editTickets(event.getUser().getId(), tickets);
-                    event.reply("Bought "+ event.getOption("amount").getAsInt() + " tickets!").setEphemeral(true)
+                    event.reply("Bought " + event.getOption("amount").getAsInt() + " tickets!").setEphemeral(true)
                             //TODO add ticket number to message
                             .queue();
-                }
-                else
-                {
+                } else {
                     event.reply("Not enough credits!").setEphemeral(true)
                             .queue();
                 }
-
-                break;
-            case "tickets":
+            }
+            case "tickets" -> {
                 String formattedTix = ds.formatArrayList(ds.getTickets(event.getUser().getId()));
-                if(formattedTix==null)
-                {
+                if (formattedTix == null) {
                     formattedTix = "";
                 }
-                event.reply("Tickets: **\n"+formattedTix+"**").setEphemeral(true)
+                event.reply("Tickets: **\n" + formattedTix + "**").setEphemeral(true)
                         .queue();
-                //TODO add custom emojis for each number
-                break;
-            case "balance":
-                event.reply("Balance: **"+ds.getCredits(event.getUser().getId())+"** credits").setEphemeral(true)
-                        .queue();
-                break;
-            case "deposit":
+            }
+            //TODO add custom emojis for each number
+            case "balance" ->
+                    event.reply("Balance: **" + ds.getCredits(event.getUser().getId()) + "** credits").setEphemeral(true)
+                            .queue();
+            case "deposit" -> {
                 if (!event.getMember().hasPermission(Permission.MANAGE_SERVER)) {
                     event.reply("Insufficient permissions").setEphemeral(true)
                             .queue();
@@ -116,73 +102,58 @@ public class mainBot extends ListenerAdapter
                 }
                 User target = event.getOption("user", OptionMapping::getAsUser);
                 int amount = event.getOption("amount", OptionMapping::getAsInt);
-
                 int currentBalance = Integer.parseInt(ds.getCredits(target.getId()));
                 currentBalance += amount;
-
                 ds.editAccount(target.getId(), String.valueOf(currentBalance));
-
-                event.reply("Deposited "+amount+" credits to "+target.getAsMention()+"'s account").setEphemeral(true)
+                event.reply("Deposited " + amount + " credits to " + target.getAsMention() + "'s account").setEphemeral(true)
                         .queue();
-                break;
-            case "about":
-                event.reply("**How the lottery works**: \n" +
-                                "Each week players can purchase tickets to the lottery drawing \n" +
-                                "Tickets cost: **"+TICKET_PRICE+ "**\n"+
-                                "Each player can purchase **"+MAX_TICKETS+"x** tickets each drawing \n" +
-                        "If the winning number does not match any purchased ticket the jackpot will increase for next week, " +
-                                "this means it is possible to have **no winners** in a drawing").setEphemeral(true)
-                        .queue();
-                break;
-                /********************************************************************************/
-            case "jackpot":
-                event.reply("Current Jackpot: **"+currentJackpot+"** credits!").setEphemeral(true)
-                        .queue();
-                break;
-            case "update":
+            }
+            case "about" -> event.reply("**How the lottery works**: \n" +
+                            "Each week players can purchase tickets to the lottery drawing \n" +
+                            "Tickets cost: **" + TICKET_PRICE + "**\n" +
+                            "Each player can purchase **" + MAX_TICKETS + "x** tickets each drawing \n" +
+                            "If the winning number does not match any purchased ticket the jackpot will increase for next week, " +
+                            "this means it is possible to have **no winners** in a drawing").setEphemeral(true)
+                    .queue();
+            case "jackpot" -> event.reply("Current Jackpot: **" + currentJackpot + "** credits!").setEphemeral(true)
+                    .queue();
+            case "update" -> {
                 if (!event.getMember().hasPermission(Permission.MANAGE_SERVER)) {
                     event.reply("Insufficient permissions").setEphemeral(true)
                             .queue();
                     break;
                 }
-                if(event.getOption("jackpot")!=null)
-                {
+                if (event.getOption("jackpot") != null) {
                     currentJackpot = event.getOption("jackpot").getAsInt();
                 }
-                if(event.getOption("price")!=null)
-                {
+                if (event.getOption("price") != null) {
                     TICKET_PRICE = event.getOption("price").getAsInt();
                 }
-                if(event.getOption("max")!=null)
-                {
+                if (event.getOption("max") != null) {
                     MAX_TICKETS = event.getOption("max").getAsInt();
                 }
-                if(event.getOption("draw")!=null)
-                {
+                if (event.getOption("draw") != null) {
                     SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yy");
                     try {
                         drawDate = sdf.parse(event.getOption("draw").getAsString());
                     } catch (ParseException e) {
                         event.reply("Incorrect date format provided").setEphemeral(true).queue();
                     }
-                }
-                else
-                {
+                } else {
                     event.reply("Please use option (jackpot) (price) (max) (draw)").setEphemeral(true).queue();
                 }
-                //TODO add date of next drawing
-                break;
-            case "draw":
+            }
+            //TODO add date of next drawing
+            case "draw" -> {
                 if (!event.getMember().hasPermission(Permission.MANAGE_SERVER)) {
                     //TODO add draw date
-                    event.reply("Wait until: **"+drawDate+"**").setEphemeral(true).queue();
+                    event.reply("Wait until: **" + drawDate + "**").setEphemeral(true).queue();
                     break;
                 }
                 event.reply("Incompleted Feature").setEphemeral(true).queue();
-                //TODO Posts current jackpot, drawing time, ticket price, tickets sold
-                break;
-            default:
-                System.out.printf("Unknown command %s used by %#s%n", event.getName(), event.getUser());
+            }
+            //TODO Posts current jackpot, drawing time, ticket price, tickets sold
+            default -> System.out.printf("Unknown command %s used by %#s%n", event.getName(), event.getUser());
         }
     }
 }

@@ -86,7 +86,7 @@ public class userDataStore
         return fileValue;
     }
     public ArrayList<Integer> getTickets(String userID) {
-        ArrayList<Integer> tickets = new ArrayList<>();
+        ArrayList<Integer> tickets;
         JSONArray fileValue;
         try (FileReader reader = new FileReader(userID+".json"))
         {
@@ -169,12 +169,11 @@ public class userDataStore
         }
     }
     public String formatArrayList(ArrayList<Integer> tickets) {
-        String output = "";
+        StringBuilder output = new StringBuilder();
         for(int i = 0; i < tickets.size(); i++)
         {
-            output += tickets.get(i) + "\n";
+            output.append(tickets.get(i) + "\n");
         }
-        return output;
+        return output.toString();
     }
-
 }

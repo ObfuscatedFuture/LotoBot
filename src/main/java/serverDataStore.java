@@ -13,7 +13,6 @@ import java.util.Optional;
 public class serverDataStore
 {
     JSONObject obj = new JSONObject();
-    JSONArray array = new JSONArray();
     JSONParser parser = new JSONParser();
 
     //Server file will store, ticket price, draw date, max tickets, jackpot, and tickets sold
