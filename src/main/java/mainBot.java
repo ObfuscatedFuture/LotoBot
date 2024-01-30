@@ -8,6 +8,8 @@ import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.Commands;
 import net.dv8tion.jda.api.utils.cache.CacheFlag;
 
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -17,13 +19,14 @@ public class mainBot extends ListenerAdapter
     public static JDA jda;
 
     //Move all of these vars to server data file (so they are persistent across restarts)
-    public int TICKET_PRICE = 1000;
-    public int MAX_TICKETS = 20;
-    public int currentJackpot = 100000;
-    public int ticketsSold = 0;
+    public int TICKET_PRICE = -1;
+    public int MAX_TICKETS = -1;
+    public int currentJackpot = -1;
+    public int ticketsSold = -1;
 
     Date drawDate = new Date();
     userDataStore ds = new userDataStore();
+    serverDataStore sds = new serverDataStore();
     public static void main(String []args)
     {
         jda = JDABuilder.createDefault(System.getenv("token"), Collections.emptyList())
@@ -66,7 +69,24 @@ public class mainBot extends ListenerAdapter
         switch (event.getName()) {
             case "buy" -> {
                 int credits = Integer.parseInt(ds.getCredits(event.getUser().getId()));
-                if (credits > TICKET_PRICE * event.getOption("amount").getAsInt()) {
+                /* CACHE TICKET PRICE & MAX TICKETS*/
+                if(TICKET_PRICE==-1 || MAX_TICKETS==-1)
+                {
+                    try {
+                        TICKET_PRICE = (sds.getTixPrice(event.getGuild().getId()));
+                        MAX_TICKETS = (sds.getMaxTix(event.getGuild().getId()));
+                    } catch (FileNotFoundException e) {
+                        //TODO add error message that lottery is not setup on this server
+                    } catch (IOException e)
+                    {
+                        e.printStackTrace();
+                    }
+
+                }
+                if ((credits > TICKET_PRICE * event.getOption("amount").getAsInt()) &&
+                        ds.getTickets(event.getUser().getId()).size()+event.getOption("amount").getAsInt() <= (MAX_TICKETS))
+                {
+                    //Successfully passes purchase checks
                     ds.editAccount(event.getUser().getId(), String.valueOf(credits - (TICKET_PRICE * event.getOption("amount").getAsInt())));
                     ArrayList<Integer> tickets = ds.getTickets(event.getUser().getId());
                     for (int i = 0; i < event.getOption("amount").getAsInt(); i++) {
@@ -77,8 +97,11 @@ public class mainBot extends ListenerAdapter
                     event.reply("Bought " + event.getOption("amount").getAsInt() + " tickets!").setEphemeral(true)
                             //TODO add ticket number to message
                             .queue();
-                } else {
+                } else if(credits < TICKET_PRICE * event.getOption("amount").getAsInt()) {
                     event.reply("Not enough credits!").setEphemeral(true)
+                            .queue();
+                } else if(ds.getTickets(event.getUser().getId()).size()+event.getOption("amount").getAsInt() > (MAX_TICKETS)) {
+                    event.reply("Too many tickets!").setEphemeral(true)
                             .queue();
                 }
             }
@@ -124,12 +147,15 @@ public class mainBot extends ListenerAdapter
                     break;
                 }
                 if (event.getOption("jackpot") != null) {
+                    //STORE IN SERVER DATA
                     currentJackpot = event.getOption("jackpot").getAsInt();
                 }
                 if (event.getOption("price") != null) {
+                    //STORE IN SERVER DATA
                     TICKET_PRICE = event.getOption("price").getAsInt();
                 }
                 if (event.getOption("max") != null) {
+                    //STORE IN SERVER DATA
                     MAX_TICKETS = event.getOption("max").getAsInt();
                 }
                 if (event.getOption("draw") != null) {

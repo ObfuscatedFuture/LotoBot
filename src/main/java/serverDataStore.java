@@ -16,7 +16,7 @@ public class serverDataStore
     JSONParser parser = new JSONParser();
 
     //Server file will store, ticket price, draw date, max tickets, jackpot, and tickets sold
-    public Optional<String> newServer(int serverID, int tixPrice, Date drawDate, int maxTix, int jackpot, int tixSold)
+    public Optional<String> newServer(String serverID, int tixPrice, Date drawDate, int maxTix, int jackpot, int tixSold)
     {
         String ErrorOutput = "No info";
         try (FileReader reader = new FileReader(serverID+".json"))
@@ -55,13 +55,77 @@ public class serverDataStore
         return Optional.ofNullable(ErrorOutput);
     }
     //TODO Add caching of vars in main method to reduce file reads
-    public String getTixPrice(int serverID)
+    public int getTixPrice(String serverID) throws IOException {
+        int value = 0;
+        try (FileReader reader = new FileReader(serverID+".json"))
+        {
+            JSONObject obj = (JSONObject) parser.parse(reader);
+            value = (int) obj.get("tixPrice:");
+        } catch (FileNotFoundException e) {
+            throw new FileNotFoundException("Server does not have a file");
+        } catch (IOException | ParseException e) {
+            e.printStackTrace();
+            throw new IOException ("Unspecified Error, Contact Awesome_Wow");
+        }
+        return value;
+    }
+    public String getDrawDate(String serverID)
     {
         String fileValue = "";
         try (FileReader reader = new FileReader(serverID+".json"))
         {
             JSONObject obj = (JSONObject) parser.parse(reader);
-            fileValue = (String) obj.get("tixPrice:");
+            fileValue = (String) obj.get("drawDate:");
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+            //TODO output verbose error message
+            fileValue = "Server does not have a file";
+        } catch (IOException | ParseException e) {
+            e.printStackTrace();
+            fileValue = "Unspecified Error";
+        }
+        return fileValue;
+    }
+    public int getMaxTix(String serverID) throws IOException {
+        int value = 0;
+        try (FileReader reader = new FileReader(serverID+".json"))
+        {
+            JSONObject obj = (JSONObject) parser.parse(reader);
+            value = (int) obj.get("maxTix:");
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+            //TODO output verbose error message
+            throw new FileNotFoundException("Server does not have a file");
+        } catch (IOException | ParseException e) {
+            e.printStackTrace();
+            throw new IOException("Unspecified Error, Contact Awesome_Wow");
+        }
+        return value;
+    }
+    public String getJackpot(String serverID)
+    {
+        String fileValue = "";
+        try (FileReader reader = new FileReader(serverID+".json"))
+        {
+            JSONObject obj = (JSONObject) parser.parse(reader);
+            fileValue = (String) obj.get("jackpot:");
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+            //TODO output verbose error message
+            fileValue = "Server does not have a file";
+        } catch (IOException | ParseException e) {
+            e.printStackTrace();
+            fileValue = "Unspecified Error";
+        }
+        return fileValue;
+    }
+    public String getTixSold(int serverID)
+    {
+        String fileValue = "";
+        try (FileReader reader = new FileReader(serverID+".json"))
+        {
+            JSONObject obj = (JSONObject) parser.parse(reader);
+            fileValue = (String) obj.get("tixSold:");
         } catch (FileNotFoundException e) {
             e.printStackTrace();
             //TODO output verbose error message
